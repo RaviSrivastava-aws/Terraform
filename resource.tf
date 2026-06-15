@@ -43,7 +43,7 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 resource "aws_iam_role" "example" {
-  name               = "lambda_execution_role"
+  name               = "lambda_execution_role_test"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
@@ -51,7 +51,7 @@ resource "aws_iam_role" "example" {
 data "archive_file" "example" {
   type        = "zip"
   source_file = "${path.module}/lambda/index.js"
-  output_path = "${path.module}/lambda/function.zip"
+  output_path = "${path.module}/lambda/fix.zip"
 }
 
 # Lambda function

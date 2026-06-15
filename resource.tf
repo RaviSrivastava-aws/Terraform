@@ -21,7 +21,7 @@ resource "aws_instance" "test_ec2" {
 }
 
 resource "aws_s3_bucket" "example" {
-  bucket = "my-tf-test-s3"
+  bucket = "my-tf-test-s3bucet-for-dev"
 
   tags = {
     Name        = "My bucket"

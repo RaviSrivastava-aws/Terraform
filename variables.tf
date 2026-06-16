@@ -15,5 +15,5 @@ variable "instance_type" {
 
 variable "bucket_name" {
   type    = string
-  default = "my-tf-test-s3bucket-for-productions"
+  default = "my-tf-test-s3bucket-for-pre-prodss"
 }

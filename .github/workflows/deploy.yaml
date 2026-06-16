@@ -11,19 +11,34 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Show repository files
+        run: |
+          echo "Current directory:"
+          pwd
+
+          echo "Repository files:"
+          find . -maxdepth 4 -type f | sort
+
+          echo "Lambda folder:"
+          ls -la lambda || true
+
+          echo "Lambda index.js:"
+          ls -lh lambda/index.js || true
+          cat lambda/index.js || true
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: latest
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: "ap-south-1"
+          aws-region: ap-south-1
 
       - name: Terraform Init
         run: terraform init -upgrade
@@ -33,8 +48,22 @@ jobs:
           terraform import aws_iam_role.example lambda_execution_role_test || true
           terraform import aws_s3_bucket.example my-tf-test-s3bucket-for-productions || true
 
+      - name: Terraform Validate
+        run: terraform validate
+
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -out=tfplan
+
+      - name: Check generated Lambda zip
+        run: |
+          echo "Checking generated zip files:"
+          find . -maxdepth 3 -name "*.zip" -type f -exec ls -lh {} \;
+
+          echo "Contents of fix.zip if present:"
+          unzip -l fix.zip || true
+
+          echo "Contents of lambda/fix.zip if present:"
+          unzip -l lambda/fix.zip || true
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve tfplan

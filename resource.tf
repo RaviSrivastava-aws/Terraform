@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.7"
+    }
   }
 }
 
@@ -21,14 +25,14 @@ resource "aws_instance" "test_ec2" {
 }
 
 resource "aws_s3_bucket" "example" {
-  bucket = "my-tf-test-s3bucket-for-developments"
+  bucket = "my-tf-test-s3bucket-for-productions"
 
   tags = {
     Name        = "My bucket"
-    Environment = "Dev"
+    Environment = "production"
   }
 }
-# IAM role for Lambda execution
+
 data "aws_iam_policy_document" "assume_role" {
   statement {
     effect = "Allow"
@@ -47,22 +51,29 @@ resource "aws_iam_role" "example" {
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
-# Package the Lambda function code
+resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
+  role       = aws_iam_role.example.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
 data "archive_file" "example" {
   type        = "zip"
   source_file = "${path.module}/lambda/index.js"
   output_path = "${path.module}/lambda/fix.zip"
 }
 
-# Lambda function
 resource "aws_lambda_function" "example" {
-  filename      = data.archive_file.example.output_path
-  function_name = "example_lambda_function"
-  role          = aws_iam_role.example.arn
-  handler       = "index.handler"
-  code_sha256   = data.archive_file.example.output_base64sha256
+  filename         = data.archive_file.example.output_path
+  function_name    = "example_lambda_function"
+  role             = aws_iam_role.example.arn
+  handler          = "index.handler"
+  source_code_hash = data.archive_file.example.output_base64sha256
 
   runtime = "nodejs24.x"
+
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_basic_execution
+  ]
 
   environment {
     variables = {

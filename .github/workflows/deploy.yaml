@@ -40,11 +40,6 @@ jobs:
       - name: Terraform Init
         run: terraform init -upgrade
 
-      - name: Terraform Import Existing Resources
-        run: |
-          terraform import aws_iam_role.example lambda_execution_role_test || true
-          terraform import aws_s3_bucket.example my-tf-test-s3bucket-for-productions || true
-
       - name: Terraform Validate
         run: terraform validate
 
@@ -61,24 +56,4 @@ jobs:
           unzip -l lambda/fix.zip || true
 
       - name: Terraform Apply
-        id: apply
-        continue-on-error: true
-        run: |
-          set -x
-          terraform apply -auto-approve tfplan
-
-      - name: Show Terraform state after apply
-        if: always()
-        run: |
-          echo "Terraform state:"
-          terraform state list || true
-
-          echo "Zip files:"
-          find . -maxdepth 3 -name "*.zip" -type f -exec ls -lh {} \; || true
-
-          echo "Files:"
-          find . -maxdepth 3 -type f | sort
-
-      - name: Fail if apply failed
-        if: steps.apply.outcome == 'failure'
-        run: exit 1
+        run: terraform apply -auto-approve tfplan
